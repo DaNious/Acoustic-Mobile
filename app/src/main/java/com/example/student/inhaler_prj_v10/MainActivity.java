@@ -359,11 +359,6 @@ public class MainActivity extends AppCompatActivity {
             }
             audioRecord.stop();
             dos.close();
-            /*Environment.getExternalStorageDirectory().setExecutable(true);
-            Environment.getExternalStorageDirectory().setReadable(true);
-            Environment.getExternalStorageDirectory().setWritable(true);
-            MediaScannerConnection.scanFile(this, new String[]{Environment.getExternalStorageDirectory().getAbsolutePath()}, null, null);*/
-            //modified 10182018 - no real effect
         }catch (Throwable t){
             Log.e(TAG, "录音失败");
         }
