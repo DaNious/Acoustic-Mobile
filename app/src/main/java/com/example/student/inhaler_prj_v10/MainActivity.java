@@ -3,6 +3,7 @@ package com.example.student.inhaler_prj_v10;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.SensorManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -33,13 +34,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
     //private static MediaPlayer player;    //modified 07312018
+    private SensorActivity sensorActivity;  //Added 02202019
     MediaPlayer player = new MediaPlayer();
     private File file;
+    private File rotationFile;//Added 02202019
+    private PrintWriter pw; //Added 02202019
+    private FileOutputStream rf; //Added 02202019
     private boolean isRecording = false;
     public static final String TAG = "PCMSample";
     public static final CharSequence CHAR_SEQUENCE_SINUSOID = "Sinusoid";
@@ -56,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView textview_speaker_selection;
     private TextView textView_time_display;//modified 12062018
     private ToggleButton togglebutton_playandrecord; //modified 08012018
+    private TextView textView_rotation; //Added 02202019
     private int FileNum = 0; //modified 10182018
     private long startTime = 0;  //modified 12062018
     private int hitTimes; //modified 12062018
@@ -64,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sensorActivity = new SensorActivity((SensorManager)getSystemService(SENSOR_SERVICE), this); //Added 02202019
         button_sound_play = (Button) findViewById(R.id.button_sound_play);
         button_sound_stop = (Button) findViewById(R.id.button_sound_stop);
         button_record = (Button) findViewById(R.id.button_record);
@@ -75,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         textView_time_display.setMovementMethod(new ScrollingMovementMethod());//modified 12062018
         /* Called when the user taps the play & record toggle button */     //modified 08012018
         togglebutton_playandrecord = (ToggleButton)findViewById(R.id.toggleButton_playandrecord);
+        textView_rotation = (TextView) findViewById(R.id.textView_rotation); //Added 02202019
         togglebutton_playandrecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -121,6 +132,10 @@ public class MainActivity extends AppCompatActivity {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                         file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
                                 + "/reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
+                        rotationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
+                                + "/reverseme" +dateFormat.format(date) + ".txt");      //Added 02202019
+                        rf = new FileOutputStream(rotationFile);
+                        pw = new PrintWriter(rf);
                         Log.i(TAG,"生成文件");
                         Thread thread = new Thread(new Runnable() {
                             @Override
@@ -140,10 +155,51 @@ public class MainActivity extends AppCompatActivity {
                     button_record.setEnabled(true);
                     button_hit_checkpoint.setEnabled(false); //modified 12062018
                     player.stop();
+                    pw.flush(); //Added 02202019
+                    pw.close();//Added 02202019
+                    try {
+                        rf.close();//Added 02202019
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     isRecording = false;
                 }
             }
         });
+    }
+
+    /* get rotation readings from IMU sensors */ //Added 02202019
+    protected void rotationChanged(float[] values){
+        float[] rotationMatrix = new float[16];
+        // get rotation matrix from the vector
+        SensorManager.getRotationMatrixFromVector(rotationMatrix, values);
+        // convert to orientations
+        float[] orientations = new float[3];
+        SensorManager.getOrientation(rotationMatrix, orientations);
+        //conver to degree
+        for (int i = 0; i < 3; i ++){
+            orientations[i] = (float)(Math.toDegrees(orientations[i]));
+        }
+        textView_rotation.setText("0: " + Float.toString(orientations[0]) + "\n" +
+                "1: " + Float.toString(orientations[1]) + "\n" +
+                "2: " + Float.toString(orientations[2]) + "\n");
+        if (isRecording){
+            pw.println(Float.toString(orientations[0]));
+            pw.println(Float.toString(orientations[1]));
+            pw.println(Float.toString(orientations[2]));
+        }
+    }
+
+    /* Resume IMU sensors */ //Added 02202019
+    protected void onResume(){
+        super.onResume();
+        sensorActivity.onResume();
+    }
+
+    /* Pause IMU sensors */ //Added 02202019
+    protected void onPause(){
+        super.onPause();
+        sensorActivity.onPause();
     }
 
     /* Called when hit the checkpoint button //modified 12062018 */
