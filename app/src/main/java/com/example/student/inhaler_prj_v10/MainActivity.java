@@ -14,6 +14,7 @@ import android.media.audiofx.AutomaticGainControl;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Process;
+import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private PrintWriter pw; //Added 02202019
     private FileOutputStream rf; //Added 02202019
     private boolean isRecording = false;
+    private boolean isCalibration = false; //added 02212019
     public static final String TAG = "PCMSample";
     public static final CharSequence CHAR_SEQUENCE_SINUSOID = "Sinusoid";
     public static final CharSequence CHAR_SEQUENCE_FMCW = "FMCW";
@@ -64,16 +66,19 @@ public class MainActivity extends AppCompatActivity {
     private TextView textview_speaker_selection;
     private TextView textView_time_display;//modified 12062018
     private ToggleButton togglebutton_playandrecord; //modified 08012018
+    private ToggleButton toggleButton_Calibrate; //added 02212019
     private TextView textView_rotation; //Added 02202019
     private int FileNum = 0; //modified 10182018
     private long startTime = 0;  //modified 12062018
     private int hitTimes; //modified 12062018
+    private Vibrator vibrator; //added 02212019
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sensorActivity = new SensorActivity((SensorManager)getSystemService(SENSOR_SERVICE), this); //Added 02202019
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);//added 02212019
         button_sound_play = (Button) findViewById(R.id.button_sound_play);
         button_sound_stop = (Button) findViewById(R.id.button_sound_stop);
         button_record = (Button) findViewById(R.id.button_record);
@@ -166,11 +171,26 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        //Calibration Toggle button listener //added 02212019
+        toggleButton_Calibrate = (ToggleButton) findViewById(R.id.toggleButton_orientCalib);
+        toggleButton_Calibrate.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked)
+                    isCalibration = true;
+                else {
+                    vibrator.cancel();
+                    isCalibration = false;
+                }
+            }
+        });
     }
 
     /* get rotation readings from IMU sensors */ //Added 02202019
     protected void rotationChanged(float[] values){
         float[] rotationMatrix = new float[16];
+        long currentTime = System.currentTimeMillis();
+        double difference = (currentTime - startTime) / 1000.0;
         // get rotation matrix from the vector
         SensorManager.getRotationMatrixFromVector(rotationMatrix, values);
         // convert to orientations
@@ -184,9 +204,21 @@ public class MainActivity extends AppCompatActivity {
                 "1: " + Float.toString(orientations[1]) + "\n" +
                 "2: " + Float.toString(orientations[2]) + "\n");
         if (isRecording){
+            pw.println(Double.toString(difference));
             pw.println(Float.toString(orientations[0]));
             pw.println(Float.toString(orientations[1]));
             pw.println(Float.toString(orientations[2]));
+        }
+        //Check orientation angles and vibrates if it is not valid //added 02212019
+        if (isCalibration) {
+            if (orientations[1] < -30 || orientations[1] > -20 ||
+                    orientations[2] > -160 || orientations[2] < -170){
+                long[] pattern = {0, 100, 1000};
+                vibrator.vibrate(pattern, 0);
+            }
+            else{
+                vibrator.cancel();
+            }
         }
     }
 
@@ -200,6 +232,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause(){
         super.onPause();
         sensorActivity.onPause();
+        vibrator.cancel();//added 02212019
     }
 
     /* Called when hit the checkpoint button //modified 12062018 */
