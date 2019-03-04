@@ -25,6 +25,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.RadioButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -47,8 +49,11 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer player = new MediaPlayer();
     private File file;
     private File rotationFile;//Added 02202019
+    private File acclerationFile; //Added 03042019
     private PrintWriter pw; //Added 02202019
+    private PrintWriter pw_a; //Added 03042019
     private FileOutputStream rf; //Added 02202019
+    private FileOutputStream af; //Added 03042019
     private boolean isRecording = false;
     private boolean isCalibration = false; //added 02212019
     public static final String TAG = "PCMSample";
@@ -68,6 +73,8 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton togglebutton_playandrecord; //modified 08012018
     private ToggleButton toggleButton_Calibrate; //added 02212019
     private TextView textView_rotation; //Added 02202019
+    private TextView textView_accleration; //Added 03042019
+    private Switch switch_IMUrecord; //Added 03042019
     private int FileNum = 0; //modified 10182018
     private long startTime = 0;  //modified 12062018
     private int hitTimes; //modified 12062018
@@ -91,6 +98,8 @@ public class MainActivity extends AppCompatActivity {
         /* Called when the user taps the play & record toggle button */     //modified 08012018
         togglebutton_playandrecord = (ToggleButton)findViewById(R.id.toggleButton_playandrecord);
         textView_rotation = (TextView) findViewById(R.id.textView_rotation); //Added 02202019
+        textView_accleration = (TextView) findViewById(R.id.textView_acceleration);  //Added 03042019
+        switch_IMUrecord = (Switch) findViewById(R.id.switch_IMUrecord); //Added 03042019
         togglebutton_playandrecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -98,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
                     button_sound_play.setEnabled(false);
                     button_record.setEnabled(false);
                     button_hit_checkpoint.setEnabled(true); //modified 12062018
+                    switch_IMUrecord.setEnabled(false); //Added 03042019
                     startTime = System.currentTimeMillis(); //get current time modified 12062018
                     hitTimes = 0; //modified 12062018
                     textView_time_display.setText("");//modified 12062018
@@ -137,10 +147,16 @@ public class MainActivity extends AppCompatActivity {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                         file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
                                 + "/reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
-                        rotationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                + "/reverseme" +dateFormat.format(date) + ".txt");      //Added 02202019
-                        rf = new FileOutputStream(rotationFile);
-                        pw = new PrintWriter(rf);
+                        if (switch_IMUrecord.isChecked()) {
+                            rotationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
+                                    + "/orientation" +dateFormat.format(date) + ".txt");      //Added 02202019
+                            acclerationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
+                                    + "/acceleration" + dateFormat.format(date) + ".txt");   //Added 03042019
+                            rf = new FileOutputStream(rotationFile);
+                            af = new FileOutputStream(acclerationFile); //Added 03042019
+                            pw = new PrintWriter(rf);
+                            pw_a = new PrintWriter(af);
+                        }
                         Log.i(TAG,"生成文件");
                         Thread thread = new Thread(new Runnable() {
                             @Override
@@ -159,13 +175,19 @@ public class MainActivity extends AppCompatActivity {
                     button_sound_play.setEnabled(true);
                     button_record.setEnabled(true);
                     button_hit_checkpoint.setEnabled(false); //modified 12062018
+                    switch_IMUrecord.setEnabled(true); //Added 03042019
                     player.stop();
-                    pw.flush(); //Added 02202019
-                    pw.close();//Added 02202019
-                    try {
-                        rf.close();//Added 02202019
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if (switch_IMUrecord.isChecked()) {
+                        pw.flush(); //Added 02202019
+                        pw.close();//Added 02202019
+                        pw_a.flush();//Added 03042019
+                        pw_a.close(); //Added 03042019
+                        try {
+                            rf.close();//Added 02202019
+                            af.close();//Added 03042019
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                     isRecording = false;
                 }
@@ -203,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
         textView_rotation.setText("0: " + Float.toString(orientations[0]) + "\n" +
                 "1: " + Float.toString(orientations[1]) + "\n" +
                 "2: " + Float.toString(orientations[2]) + "\n");
-        if (isRecording){
+        if (isRecording && switch_IMUrecord.isChecked()){
             pw.println(Double.toString(difference));
             pw.println(Float.toString(orientations[0]));
             pw.println(Float.toString(orientations[1]));
@@ -219,6 +241,21 @@ public class MainActivity extends AppCompatActivity {
             else{
                 vibrator.cancel();
             }
+        }
+    }
+
+    /* get accelerometer readings from IMU sensors */ //Added 03042019
+    protected void accelerationChanged(float[] values){
+        long currentTime = System.currentTimeMillis();
+        double difference = (currentTime - startTime) / 1000.0;
+        textView_accleration.setText("0: " + Float.toString(values[0]) + "\n" +
+               "1: " + Float.toString(values[1]) + "\n" +
+                "2: " + Float.toString(values[2]) + "\n");
+        if (isRecording && switch_IMUrecord.isChecked()){
+            pw_a.println(Double.toString(difference));
+            pw_a.println(Float.toString(values[0]));
+            pw_a.println(Float.toString(values[1]));
+            pw_a.println(Float.toString(values[2]));
         }
     }
 
