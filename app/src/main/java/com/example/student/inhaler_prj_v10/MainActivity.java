@@ -146,12 +146,12 @@ public class MainActivity extends AppCompatActivity {
                         Date date = new Date();
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                         file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                + "/reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
+                                + "/DriveSyncFiles/reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
                         if (switch_IMUrecord.isChecked()) {
                             rotationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                    + "/orientation" +dateFormat.format(date) + ".txt");      //Added 02202019
+                                    + "/DriveSyncFiles/orientation" +dateFormat.format(date) + ".txt");      //Added 02202019
                             acclerationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                    + "/acceleration" + dateFormat.format(date) + ".txt");   //Added 03042019
+                                    + "/DriveSyncFiles/acceleration" + dateFormat.format(date) + ".txt");   //Added 03042019
                             rf = new FileOutputStream(rotationFile);
                             af = new FileOutputStream(acclerationFile); //Added 03042019
                             pw = new PrintWriter(rf);
