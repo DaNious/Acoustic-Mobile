@@ -217,4 +217,16 @@
         app:layout_constraintBottom_toTopOf="@+id/textView_speaker_selection"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <Button
+        android:id="@+id/button_startProcess"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:onClick="startProcess_Callback"
+        android:text="Process"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_playrecord" />
+
 </android.support.constraint.ConstraintLayout>

@@ -16,4 +16,5 @@
     <string name="toggle_on">ON</string>
     <string name="toggle_off">OFF</string>
     <string name="hit_label">Hit</string>
+    <string name="start_process_label">Process</string>
 </resources>
