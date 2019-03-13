@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true"
     tools:context=".MainActivity">
 
     <TextView
@@ -53,6 +55,7 @@
         android:text="@string/label_textview_sound_record"
         android:textColor="@android:color/background_dark"
         android:textSize="18sp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.501"
@@ -70,6 +73,7 @@
         android:onClick="startRecord_Callback"
         android:text="@string/label_button_record"
         android:textSize="18sp"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_record" />
 
@@ -84,6 +88,7 @@
         android:onClick="stopRecord_Callback"
         android:text="@string/label_button_record_stop"
         android:textSize="18sp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_record" />
 
@@ -117,13 +122,14 @@
         android:id="@+id/textView_playrecord"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="106dp"
+        android:layout_marginTop="16dp"
         android:text="@string/lable_toggle_playandrecord"
         android:textColor="@android:color/background_dark"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.503"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_record" />
+        app:layout_constraintTop_toBottomOf="@+id/button_sound_stop" />
 
     <ToggleButton
         android:id="@+id/toggleButton_playandrecord"
@@ -156,29 +162,31 @@
         android:id="@+id/textView_checkpoint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="32dp"
-        android:layout_marginStart="32dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:gravity="bottom"
         android:marqueeRepeatLimit="marquee_forever"
         android:maxLines="6"
         android:scrollbars="vertical"
-        app:layout_constraintStart_toEndOf="@+id/toggleButton_playandrecord"
-        app:layout_constraintTop_toBottomOf="@+id/toggleButton_playandrecord" />
+        app:layout_constraintStart_toStartOf="@+id/button_timer"
+        app:layout_constraintTop_toBottomOf="@+id/button_timer" />
 
     <TextView
         android:id="@+id/textView_rotation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toggleButton_playandrecord" />
+        android:layout_marginBottom="16dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView_acceleration"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ToggleButton
         android:id="@+id/toggleButton_orientCalib"
         android:layout_width="54dp"
         android:layout_height="45dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="32dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
         android:text="ToggleButton"
@@ -201,10 +209,11 @@
         android:id="@+id/textView_acceleration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_rotation" />
+        android:layout_marginBottom="24dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        app:layout_constraintBottom_toTopOf="@+id/switch_IMUrecord"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Switch
         android:id="@+id/switch_IMUrecord"
@@ -221,12 +230,65 @@
         android:id="@+id/button_startProcess"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginBottom="56dp"
         android:onClick="startProcess_Callback"
         android:text="Process"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_playrecord" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/editText_name"
+        android:layout_width="87dp"
+        android:layout_height="39dp"
+        android:layout_marginBottom="32dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="Name"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@+id/button_startProcess"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView_workoutCnt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="0"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/button_startProcess"
+        app:layout_constraintTop_toBottomOf="@+id/button_startProcess" />
+
+    <Button
+        android:id="@+id/button_resetCnt"
+        android:layout_width="68dp"
+        android:layout_height="36dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="16dp"
+        android:onClick="workoutCntReset_Callback"
+        android:text="Reset"
+        android:textSize="12sp"
+        app:layout_constraintStart_toEndOf="@+id/textView_workoutCnt"
+        app:layout_constraintTop_toBottomOf="@+id/button_startProcess" />
+
+    <Button
+        android:id="@+id/button_deleteOne"
+        android:layout_width="76dp"
+        android:layout_height="39dp"
+        android:layout_marginBottom="32dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:enabled="false"
+        android:onClick="delete1Back_Callback"
+        android:text="Delete"
+        app:layout_constraintBottom_toTopOf="@+id/textView_Calibrate"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

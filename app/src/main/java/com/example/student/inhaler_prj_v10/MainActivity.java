@@ -28,6 +28,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -70,6 +71,9 @@ public class MainActivity extends AppCompatActivity {
     private Button button_record;
     private Button button_record_stop;
     private Button button_hit_checkpoint;
+    private Button button_startProcess;
+    private Button button_deleteOne;
+    private Button button_resetCnt;
     private TextView textview_waveform_selection;
     private TextView textview_speaker_selection;
     private TextView textView_time_display;//modified 12062018
@@ -77,12 +81,18 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton toggleButton_Calibrate; //added 02212019
     private TextView textView_rotation; //Added 02202019
     private TextView textView_accleration; //Added 03042019
+    private TextView textView_workoutCnt;
+    private EditText editText_name;
     private Switch switch_IMUrecord; //Added 03042019
     private int FileNum = 0; //modified 10182018
     private long startTime = 0;  //modified 12062018
+    private int workoutCnt = 0;
     private int hitTimes; //modified 12062018
     private Vibrator vibrator; //added 02212019
-    private ProgressDialog progressDialog; //added 03122019
+    private ProgressDialog progressDialog; //added
+    private CharSequence previousPCMFileName = "";
+    private CharSequence previousACCFileName = "";
+    private CharSequence previousROTFileName = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +105,9 @@ public class MainActivity extends AppCompatActivity {
         button_record = (Button) findViewById(R.id.button_record);
         button_record_stop = (Button) findViewById(R.id.button_record_stop);
         button_hit_checkpoint = (Button) findViewById(R.id.button_timer); //modified 12062018
+        button_startProcess = (Button) findViewById(R.id.button_startProcess);
+        button_deleteOne = (Button)findViewById(R.id.button_deleteOne);
+        button_resetCnt = (Button)findViewById(R.id.button_resetCnt);
         textview_waveform_selection = (TextView) findViewById(R.id.textView_waveform_selection);
         textview_speaker_selection = (TextView) findViewById(R.id.textView_speaker_selection);
         textView_time_display = (TextView) findViewById(R.id.textView_checkpoint); //modified 12062018
@@ -103,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
         togglebutton_playandrecord = (ToggleButton)findViewById(R.id.toggleButton_playandrecord);
         textView_rotation = (TextView) findViewById(R.id.textView_rotation); //Added 02202019
         textView_accleration = (TextView) findViewById(R.id.textView_acceleration);  //Added 03042019
+        textView_workoutCnt = (TextView) findViewById(R.id.textView_workoutCnt);
+        editText_name = (EditText) findViewById(R.id.editText_name);
         switch_IMUrecord = (Switch) findViewById(R.id.switch_IMUrecord); //Added 03042019
         togglebutton_playandrecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -112,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
                     button_record.setEnabled(false);
                     button_hit_checkpoint.setEnabled(true); //modified 12062018
                     switch_IMUrecord.setEnabled(false); //Added 03042019
+                    toggleButton_Calibrate.setEnabled(false);
                     startTime = System.currentTimeMillis(); //get current time modified 12062018
                     hitTimes = 0; //modified 12062018
                     textView_time_display.setText("");//modified 12062018
@@ -142,11 +158,6 @@ public class MainActivity extends AppCompatActivity {
                                 player.start();
                             }
                         });
-//                        file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-//                                + "/reverseme.pcm");
-//                        FileNum += 1;
-//                        file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-//                                + "/reverseme" + FileNum + ".pcm");    //modified 10182018
                         Date date = new Date();
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                         file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
@@ -180,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
                     button_record.setEnabled(true);
                     button_hit_checkpoint.setEnabled(false); //modified 12062018
                     switch_IMUrecord.setEnabled(true); //Added 03042019
+                    toggleButton_Calibrate.setEnabled(true);
                     player.stop();
                     if (switch_IMUrecord.isChecked()) {
                         pw.flush(); //Added 02202019
@@ -202,11 +214,29 @@ public class MainActivity extends AppCompatActivity {
         toggleButton_Calibrate.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked)
+                if (isChecked) {
                     isCalibration = true;
-                else {
+                    button_sound_play.setEnabled(false);
+                    togglebutton_playandrecord.setEnabled(false);
+                    button_startProcess.setEnabled(false);
+                    switch_IMUrecord.setEnabled(false);
+                    editText_name.setEnabled(false);
+                    button_deleteOne.setEnabled(false);
+                    button_resetCnt.setEnabled(false);
+                    textview_speaker_selection.setVisibility(View.INVISIBLE);
+                    textview_waveform_selection.setVisibility(View.INVISIBLE);
+                } else {
                     vibrator.cancel();
                     isCalibration = false;
+                    button_sound_play.setEnabled(true);
+                    togglebutton_playandrecord.setEnabled(true);
+                    button_startProcess.setEnabled(true);
+                    switch_IMUrecord.setEnabled(true);
+                    editText_name.setEnabled(true);
+                    button_deleteOne.setEnabled(true);
+                    button_resetCnt.setEnabled(true);
+                    textview_speaker_selection.setVisibility(View.VISIBLE);
+                    textview_waveform_selection.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -280,6 +310,7 @@ public class MainActivity extends AppCompatActivity {
     public void startProcess_Callback(View view){
         startTime = System.currentTimeMillis(); //get current time modified 12062018
         textView_time_display.setText("");//modified 12062018
+        button_deleteOne.setEnabled(true);//enable the delete button to roll back once
         /* Codes below are only the copy of play and record, need further reprogram */
         CharSequence current_wave = textview_waveform_selection.getText();
         CharSequence current_speaker = textview_speaker_selection.getText();
@@ -315,12 +346,18 @@ public class MainActivity extends AppCompatActivity {
             Date date = new Date();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
             file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                    + "/DriveSyncFiles/reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
+                    + "/DriveSyncFiles/" + editText_name.getText() + "_reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
+            previousPCMFileName = Environment.getExternalStorageDirectory().getAbsolutePath()
+                    + "/DriveSyncFiles/" + editText_name.getText() + "_reverseme" +dateFormat.format(date) + ".pcm";
             if (switch_IMUrecord.isChecked()) {
                 rotationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
                         + "/DriveSyncFiles/orientation" +dateFormat.format(date) + ".txt");      //Added 02202019
+                previousROTFileName = Environment.getExternalStorageDirectory().getAbsolutePath()
+                        + "/DriveSyncFiles/orientation" +dateFormat.format(date) + ".txt";
                 acclerationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
                         + "/DriveSyncFiles/acceleration" + dateFormat.format(date) + ".txt");   //Added 03042019
+                previousACCFileName = Environment.getExternalStorageDirectory().getAbsolutePath()
+                        + "/DriveSyncFiles/acceleration" + dateFormat.format(date) + ".txt";
                 rf = new FileOutputStream(rotationFile);
                 af = new FileOutputStream(acclerationFile); //Added 03042019
                 pw = new PrintWriter(rf);
@@ -471,6 +508,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         progress_t.start();
+        workoutCnt = Integer.parseInt(textView_workoutCnt.getText().toString());
+        workoutCnt += 1;
+        textView_workoutCnt.setText(String.valueOf(workoutCnt));
+    }
+
+    /* Called when hit the delete button to delete previous file */
+    public void delete1Back_Callback(View view){
+        button_deleteOne.setEnabled(false);//disable the delete button so we can only roll back once
+        if (!previousPCMFileName.equals("")){
+            File previousFile_pcm = null;
+            try {
+                previousFile_pcm = new File(previousPCMFileName.toString());
+                workoutCnt = Integer.parseInt(textView_workoutCnt.getText().toString());
+                workoutCnt -= 1;
+                textView_workoutCnt.setText(String.valueOf(workoutCnt));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            boolean deleted = previousFile_pcm.delete();
+        }
+    }
+
+    /* Called when hit the reset workout # button */
+    public void workoutCntReset_Callback(View view){
+        textView_workoutCnt.setText("0");
     }
 
     /* Called when hit the checkpoint button //modified 12062018 */
