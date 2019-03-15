@@ -24,3 +24,9 @@ add function of phone orientation indicator
 3) add a counter and reset button to record the workout times for one run of the App.
 4) add a delete button to delete previous file generated. (roll back once, but only PCM is covered for this time).
 5) change some control's Enable status to avoid unnecessary touch.
+
+# Modified 03/15/2019
+1) The App will be working in two modes, one as previously, the other will be the On-Weight mode, which means you have 
+to attach it to the weight.
+2) In the On-Weight mode, the phone will beep when the orientation meet certain value or the acceleration exceeds certain value.
+3) Change the App to disable Screen timeout.

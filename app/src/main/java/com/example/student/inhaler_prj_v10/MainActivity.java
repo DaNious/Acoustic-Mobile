@@ -2,7 +2,6 @@ package com.example.student.inhaler_prj_v10;
 
 import android.Manifest;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
 import android.media.AudioFormat;
@@ -10,12 +9,9 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.media.MediaScannerConnection;
-import android.media.audiofx.AutomaticGainControl;
+import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
 import android.os.Process;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
@@ -29,7 +25,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,11 +36,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
     //private static MediaPlayer player;    //modified 07312018
@@ -60,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private FileOutputStream af; //Added 03042019
     private boolean isRecording = false;
     private boolean isCalibration = false; //added 02212019
+    private boolean isOnWeight = false;
     public static final String TAG = "PCMSample";
     public static final CharSequence CHAR_SEQUENCE_SINUSOID = "Sinusoid";
     public static final CharSequence CHAR_SEQUENCE_FMCW = "FMCW";
@@ -79,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView textView_time_display;//modified 12062018
     private ToggleButton togglebutton_playandrecord; //modified 08012018
     private ToggleButton toggleButton_Calibrate; //added 02212019
+    private ToggleButton toggleButton_IMUonly;
     private TextView textView_rotation; //Added 02202019
     private TextView textView_accleration; //Added 03042019
     private TextView textView_workoutCnt;
@@ -93,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
     private CharSequence previousPCMFileName = "";
     private CharSequence previousACCFileName = "";
     private CharSequence previousROTFileName = "";
+    private ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+    private ToneGenerator toneGen2 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -225,6 +222,7 @@ public class MainActivity extends AppCompatActivity {
                     button_resetCnt.setEnabled(false);
                     textview_speaker_selection.setVisibility(View.INVISIBLE);
                     textview_waveform_selection.setVisibility(View.INVISIBLE);
+                    toggleButton_IMUonly.setEnabled(false);
                 } else {
                     vibrator.cancel();
                     isCalibration = false;
@@ -237,6 +235,37 @@ public class MainActivity extends AppCompatActivity {
                     button_resetCnt.setEnabled(true);
                     textview_speaker_selection.setVisibility(View.VISIBLE);
                     textview_waveform_selection.setVisibility(View.VISIBLE);
+                    toggleButton_IMUonly.setEnabled(true);
+                }
+            }
+        });
+        toggleButton_IMUonly = (ToggleButton) findViewById(R.id.toggleButton_imuonly);
+        toggleButton_IMUonly.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked){
+                    button_sound_play.setEnabled(false);
+                    togglebutton_playandrecord.setEnabled(false);
+                    switch_IMUrecord.setEnabled(false);
+                    editText_name.setEnabled(false);
+                    button_startProcess.setEnabled(false);
+                    button_resetCnt.setEnabled(false);
+                    toggleButton_Calibrate.setEnabled(false);
+                    textview_speaker_selection.setVisibility(View.INVISIBLE);
+                    textview_waveform_selection.setVisibility(View.INVISIBLE);
+                    isOnWeight = true;
+                }
+                else {
+                    button_sound_play.setEnabled(true);
+                    togglebutton_playandrecord.setEnabled(true);
+                    switch_IMUrecord.setEnabled(true);
+                    editText_name.setEnabled(true);
+                    button_startProcess.setEnabled(true);
+                    button_resetCnt.setEnabled(true);
+                    toggleButton_Calibrate.setEnabled(true);
+                    textview_speaker_selection.setVisibility(View.VISIBLE);
+                    textview_waveform_selection.setVisibility(View.VISIBLE);
+                    isOnWeight = false;
                 }
             }
         });
@@ -276,6 +305,14 @@ public class MainActivity extends AppCompatActivity {
                 vibrator.cancel();
             }
         }
+        if (isOnWeight){
+            if (orientations[2] > -65 && orientations[2] < -50) {
+                toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 200);
+            }
+            else{
+                toneGen1.stopTone();
+            }
+        }
     }
 
     /* get accelerometer readings from IMU sensors */ //Added 03042019
@@ -290,6 +327,14 @@ public class MainActivity extends AppCompatActivity {
             pw_a.println(Float.toString(values[0]));
             pw_a.println(Float.toString(values[1]));
             pw_a.println(Float.toString(values[2]));
+        }
+        if (isOnWeight){
+            if (values[0] > 1 || values[2] > 1) {
+                toneGen2.startTone(ToneGenerator.TONE_PROP_NACK, 100);
+            }
+            else{
+                toneGen2.stopTone();
+            }
         }
     }
 

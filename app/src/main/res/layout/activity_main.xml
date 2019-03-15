@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:descendantFocusability="beforeDescendants"
     android:focusableInTouchMode="true"
+    android:keepScreenOn="true"
     tools:context=".MainActivity">
 
     <TextView
@@ -290,5 +291,27 @@
         android:text="Delete"
         app:layout_constraintBottom_toTopOf="@+id/textView_Calibrate"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <ToggleButton
+        android:id="@+id/toggleButton_imuonly"
+        android:layout_width="54dp"
+        android:layout_height="45dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        android:text="ToggleButton"
+        app:layout_constraintBottom_toTopOf="@+id/textView_rotation"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView_imuonly"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginStart="8dp"
+        android:text="On-Weight Mode"
+        app:layout_constraintBottom_toTopOf="@+id/toggleButton_imuonly"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </android.support.constraint.ConstraintLayout>
