@@ -433,47 +433,47 @@ public class MainActivity extends AppCompatActivity {
         progressDialog.setCancelable(false);
         final int steadyTime = 3;
         final int holdTime = 3;
-        final int liftupTime = 3;
+        final int liftupTime = 2;
         final int holdupTime = 3;
-        final int putdownTime = 4;
+        final int putdownTime = 2;
         Thread progress_t = new Thread(new Runnable() {
             @Override
             public void run() {
                 // 1. Be steady for 3 seconds
                 int jumpTime = 0;
-                progressDialog.setMax(steadyTime*1000);
-                progressDialog.setMessage("Please be steady for 3 seconds");
-                while (jumpTime < steadyTime*1000) {
-                    try {
-                        Thread.sleep(100);
-                        jumpTime += 100;
-                        progressDialog.setProgress(jumpTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                progressDialog.dismiss();
+//                progressDialog.setMax(steadyTime*1000);
+//                progressDialog.setMessage("Please be steady for 3 seconds");
+//                while (jumpTime < steadyTime*1000) {
+//                    try {
+//                        Thread.sleep(100);
+//                        jumpTime += 100;
+//                        progressDialog.setProgress(jumpTime);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                progressDialog.dismiss();
                 //2. Hold for 3 seconds but don't lift it up
-                jumpTime = 0;
-                progressDialog.setMax(holdTime*1000);
-                progressDialog.setProgress(0);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        progressDialog.setMessage("Please hold and use power for 3 seconds. (DO NOT lift the weight up)");
-                        progressDialog.show();
-                    }
-                });
-                while (jumpTime < holdTime*1000) {
-                    try {
-                        Thread.sleep(100);
-                        jumpTime += 100;
-                        progressDialog.setProgress(jumpTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                progressDialog.dismiss();
+//                jumpTime = 0;
+//                progressDialog.setMax(holdTime*1000);
+//                progressDialog.setProgress(0);
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        progressDialog.setMessage("Please hold and use power for 3 seconds. (DO NOT lift the weight up)");
+//                        progressDialog.show();
+//                    }
+//                });
+//                while (jumpTime < holdTime*1000) {
+//                    try {
+//                        Thread.sleep(100);
+//                        jumpTime += 100;
+//                        progressDialog.setProgress(jumpTime);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                progressDialog.dismiss();
                 //3. lift up in 3 seconds
                 jumpTime = 0;
                 progressDialog.setMax(liftupTime*1000);
@@ -481,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        progressDialog.setMessage("Please lift it up in 3 seconds");
+                        progressDialog.setMessage("Please lift it up in 2 seconds");
                         progressDialog.show();
                     }
                 });
@@ -523,7 +523,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        progressDialog.setMessage("Please put it down in 4 seconds");
+                        progressDialog.setMessage("Please put it down in 2 seconds");
                         progressDialog.show();
                     }
                 });
