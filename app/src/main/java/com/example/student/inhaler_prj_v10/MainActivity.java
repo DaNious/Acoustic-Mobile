@@ -10,6 +10,7 @@ import android.media.AudioRecord;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.ToneGenerator;
+import android.media.audiofx.AutomaticGainControl;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Process;
@@ -56,8 +57,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean isOnWeight = false;
     public static final String TAG = "PCMSample";
     public static final CharSequence CHAR_SEQUENCE_SINUSOID = "Sinusoid";
-    public static final CharSequence CHAR_SEQUENCE_FMCW = "FMCW";
-    public static final CharSequence CHAR_SEQUENCE_DELAY = "Delay";
+    public static final CharSequence CHAR_SEQUENCE_FMCW = "Away";
+    public static final CharSequence CHAR_SEQUENCE_DELAY = "Close";
     public static final CharSequence CHAR_SEQUENCE_SPEAKER = "Speaker";
     public static final CharSequence CHAR_SEQUENCE_EARPIECE = "Earpiece";
     private Button button_sound_play;
@@ -134,11 +135,11 @@ public class MainActivity extends AppCompatActivity {
                     try{
                         player.reset();
                         if(current_wave.equals(CHAR_SEQUENCE_SINUSOID)) {
-                            Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile);
+                            Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_singletone);
                             player.setDataSource(MainActivity.this, setDataSourceuri);      // only "this" does not work
                         }
                         else if(current_wave.equals(CHAR_SEQUENCE_FMCW)){
-                            Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_fmcw_1016);
+                            Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.sequence_bpsk_4);
                             player.setDataSource(MainActivity.this, setDataSourceuri);
                         }
                         else if(current_wave.equals(CHAR_SEQUENCE_DELAY)){
@@ -158,12 +159,12 @@ public class MainActivity extends AppCompatActivity {
                         Date date = new Date();
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
                         file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                + "/DriveSyncFiles/reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
+                                + "/DriveSyncFiles/" +  editText_name.getText() + "_reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
                         if (switch_IMUrecord.isChecked()) {
                             rotationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                    + "/DriveSyncFiles/orientation" +dateFormat.format(date) + ".txt");      //Added 02202019
+                                    + "/orientation" +dateFormat.format(date) + ".txt");      //Added 02202019
                             acclerationFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                                    + "/DriveSyncFiles/acceleration" + dateFormat.format(date) + ".txt");   //Added 03042019
+                                    + "/acceleration" + dateFormat.format(date) + ".txt");   //Added 03042019
                             rf = new FileOutputStream(rotationFile);
                             af = new FileOutputStream(acclerationFile); //Added 03042019
                             pw = new PrintWriter(rf);
@@ -362,11 +363,11 @@ public class MainActivity extends AppCompatActivity {
         try{
             player.reset();
             if(current_wave.equals(CHAR_SEQUENCE_SINUSOID)) {
-                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile);
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_singletone);
                 player.setDataSource(MainActivity.this, setDataSourceuri);      // only "this" does not work
             }
             else if(current_wave.equals(CHAR_SEQUENCE_FMCW)){
-                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_fmcw_1016);
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.sequence_bpsk_4);
                 player.setDataSource(MainActivity.this, setDataSourceuri);
             }
             else if(current_wave.equals(CHAR_SEQUENCE_DELAY)){
@@ -615,11 +616,11 @@ public class MainActivity extends AppCompatActivity {
         try{
             player.reset();
             if(current_wave.equals(CHAR_SEQUENCE_SINUSOID)) {
-                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile);
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_singletone);
                 player.setDataSource(this, setDataSourceuri);
             }
             else if(current_wave.equals(CHAR_SEQUENCE_FMCW)){
-                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_fmcw_1016);
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.sequence_bpsk_4);
                 player.setDataSource(this, setDataSourceuri);
             }
             else if(current_wave.equals(CHAR_SEQUENCE_DELAY)){
@@ -773,13 +774,13 @@ public class MainActivity extends AppCompatActivity {
             BufferedOutputStream bos = new BufferedOutputStream(os);
             DataOutputStream dos = new DataOutputStream(bos);
             int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
-            AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
-            /*if (AutomaticGainControl.isAvailable()) {
+            AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.UNPROCESSED, frequency, channelConfiguration, audioEncoding, bufferSize);
+            if (AutomaticGainControl.isAvailable()) {
                 AutomaticGainControl agc = AutomaticGainControl.create(
                         audioRecord.getAudioSessionId()
                 );
                 agc.setEnabled(false);
-            }*/
+            }
 
             short[] buffer = new short[bufferSize];
             audioRecord.startRecording();

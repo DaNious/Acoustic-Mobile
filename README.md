@@ -30,3 +30,7 @@ add function of phone orientation indicator
 to attach it to the weight.
 2) In the On-Weight mode, the phone will beep when the orientation meet certain value or the acceleration exceeds certain value.
 3) Change the App to disable Screen timeout.
+
+# Modified 07/17/2019
+1) The sound files are stored in a synced folder.
+2) Archive this version to make changes on test protocols.

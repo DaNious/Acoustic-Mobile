@@ -8,8 +8,8 @@
     <string name="label_textview_sound_play">Sound Player</string>
     <string name="label_textview_sound_record">Recorder</string>
     <string name="sinusoid_label">Sinusoid</string>
-    <string name="fmcw_label">FMCW</string>
-    <string name="delay_label">Delay</string>
+    <string name="fmcw_label">Away</string>
+    <string name="delay_label">Close</string>
     <string name="speaker_label">Speaker</string>
     <string name="earpiece_label">Earpiece</string>
     <string name="lable_toggle_playandrecord">Play &amp; Record simultaneously</string>
