@@ -13,6 +13,7 @@ import android.media.ToneGenerator;
 import android.media.audiofx.AutomaticGainControl;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Process;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
@@ -40,6 +41,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
     //private static MediaPlayer player;    //modified 07312018
@@ -89,8 +92,10 @@ public class MainActivity extends AppCompatActivity {
     private CharSequence previousPCMFileName = "";
     private CharSequence previousACCFileName = "";
     private CharSequence previousROTFileName = "";
-    private ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+    private ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_RING, 100);
     private ToneGenerator toneGen2 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+    Thread progress_t;
+    Thread thread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -352,6 +357,235 @@ public class MainActivity extends AppCompatActivity {
         vibrator.cancel();//added 02212019
     }
 
+    /* Called when hit the Auto button (added 08302019) */
+    public void autoProcess_Callback(View view){
+        //1. Prepare the audio file
+        try {
+            CharSequence current_wave = textview_waveform_selection.getText();
+            CharSequence current_speaker = textview_speaker_selection.getText();
+            player.reset();
+            if(current_wave.equals(CHAR_SEQUENCE_SINUSOID)) {
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_singletone);
+                player.setDataSource(MainActivity.this, setDataSourceuri);      // only "this" does not work
+            }
+            else if(current_wave.equals(CHAR_SEQUENCE_FMCW)){
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.sequence_bpsk_4);
+                player.setDataSource(MainActivity.this, setDataSourceuri);
+            }
+            else if(current_wave.equals(CHAR_SEQUENCE_DELAY)){
+                Uri setDataSourceuri = Uri.parse("android.resource://com.example.student.inhaler_prj_v10/"+R.raw.myfile_bpsk_gsm);
+                player.setDataSource(MainActivity.this, setDataSourceuri);
+            }
+            if(current_speaker.equals(CHAR_SEQUENCE_SPEAKER))
+                player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            else if(current_speaker.equals(CHAR_SEQUENCE_EARPIECE))
+                player.setAudioStreamType(AudioManager.STREAM_VOICE_CALL);
+            player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    player.start();
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        progressDialog = new ProgressDialog(MainActivity.this);
+        progressDialog.setMessage("Please be steady for 3 seconds");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setIndeterminate(false);
+        progressDialog.setProgress(0);
+        progressDialog.show();
+        progressDialog.setCancelable(false);
+        final int steadyTime = 3;
+        final int holdTime = 3;
+        final int liftupTime = 2;
+        final int holdupTime = 3;
+        final int putdownTime = 2;
+        final int waitTime = 5;
+        player.prepareAsync();
+        //2. Get ready to save the record file
+        Thread multiWorkout_t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 5; i ++) {
+                    Date date = new Date();
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+                    file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
+                            + "/DriveSyncFiles/" + editText_name.getText() + "_reverseme" +dateFormat.format(date) + ".pcm");    //modified 10182018
+//        previousPCMFileName = Environment.getExternalStorageDirectory().getAbsolutePath()
+//                + "/DriveSyncFiles/" + editText_name.getText() + "_reverseme" +dateFormat.format(date) + ".pcm";
+                    Log.i(TAG,"生成文件");
+                    thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
+                            startRecord();
+                        }
+                    });
+                    thread.start();
+                    // create the progress dialog
+
+                    progress_t = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 1. Be steady for 3 seconds
+                            toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
+                            int jumpTime = 0;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressDialog.setMax(steadyTime*1000);
+                                    progressDialog.setMessage("Please be steady for 3 seconds");
+                                }
+                            });
+                            while (jumpTime < steadyTime*1000) {
+                                try {
+                                    Thread.sleep(100);
+                                    jumpTime += 100;
+                                    progressDialog.setProgress(jumpTime);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            progressDialog.dismiss();
+                            toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
+                            //2. Hold for 3 seconds but don't lift it up
+                            //                jumpTime = 0;
+                            //                progressDialog.setMax(holdTime*1000);
+                            //                progressDialog.setProgress(0);
+                            //                runOnUiThread(new Runnable() {
+                            //                    @Override
+                            //                    public void run() {
+                            //                        progressDialog.setMessage("Please hold and use power for 3 seconds. (DO NOT lift the weight up)");
+                            //                        progressDialog.show();
+                            //                    }
+                            //                });
+                            //                while (jumpTime < holdTime*1000) {
+                            //                    try {
+                            //                        Thread.sleep(100);
+                            //                        jumpTime += 100;
+                            //                        progressDialog.setProgress(jumpTime);
+                            //                    } catch (InterruptedException e) {
+                            //                        e.printStackTrace();
+                            //                    }
+                            //                }
+                            //                progressDialog.dismiss();
+                            //3. lift up in 3 seconds
+                            jumpTime = 0;
+                            progressDialog.setMax(liftupTime*1000);
+                            progressDialog.setProgress(0);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressDialog.setMessage("Please lift it up in 2 seconds");
+                                    progressDialog.show();
+                                }
+                            });
+                            while (jumpTime < liftupTime*1000) {
+                                try {
+                                    Thread.sleep(100);
+                                    jumpTime += 100;
+                                    progressDialog.setProgress(jumpTime);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            progressDialog.dismiss();
+                            toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
+                            //4. lift up in 3 seconds
+                            jumpTime = 0;
+                            progressDialog.setMax(holdupTime*1000);
+                            progressDialog.setProgress(0);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressDialog.setMessage("Please hold it up for 3 seconds");
+                                    progressDialog.show();
+                                }
+                            });
+                            while (jumpTime < holdupTime*1000) {
+                                try {
+                                    Thread.sleep(100);
+                                    jumpTime += 100;
+                                    progressDialog.setProgress(jumpTime);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            progressDialog.dismiss();
+                            toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
+                            //5. put down in 4 seconds
+                            jumpTime = 0;
+                            progressDialog.setMax(putdownTime*1000);
+                            progressDialog.setProgress(0);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressDialog.setMessage("Please put it down in 2 seconds");
+                                    progressDialog.show();
+                                }
+                            });
+                            while (jumpTime < putdownTime*1000) {
+                                try {
+                                    Thread.sleep(100);
+                                    jumpTime += 100;
+                                    progressDialog.setProgress(jumpTime);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            progressDialog.dismiss();
+                            toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
+                            //6. wait for 1 second
+                            jumpTime = 0;
+                            progressDialog.setMax(waitTime*1000);
+                            progressDialog.setProgress(0);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressDialog.setMessage("Please wait for a second");
+                                    progressDialog.show();
+                                }
+                            });
+                            while (jumpTime < waitTime*1000) {
+                                try {
+                                    Thread.sleep(100);
+                                    jumpTime += 100;
+                                    progressDialog.setProgress(jumpTime);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            progressDialog.dismiss();
+                            // stop
+                            player.stop();
+                            isRecording = false;
+                        }
+                    });
+                    progress_t.start();
+                    workoutCnt = Integer.parseInt(textView_workoutCnt.getText().toString());
+                    workoutCnt += 1;
+                    textView_workoutCnt.setText(String.valueOf(workoutCnt));
+                    //wait time
+//            int threadTime = steadyTime + holdTime + liftupTime + holdupTime + putdownTime + waitTime;
+//            Handler handler = new Handler();
+//            handler.postDelayed(new Runnable() {
+//                public void run() {
+                    try {
+                        thread.join();
+                        progress_t.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+//                }
+//            }, threadTime*1000);
+                }
+            }
+        });
+        multiWorkout_t.run();
+    }
+
+
     /* Called when hit the process button followings are added 03122019 */
     public void startProcess_Callback(View view){
         startTime = System.currentTimeMillis(); //get current time modified 12062018
@@ -436,23 +670,26 @@ public class MainActivity extends AppCompatActivity {
         final int liftupTime = 2;
         final int holdupTime = 3;
         final int putdownTime = 2;
+        final int waitTime = 1;
         Thread progress_t = new Thread(new Runnable() {
             @Override
             public void run() {
                 // 1. Be steady for 3 seconds
+                toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
                 int jumpTime = 0;
-//                progressDialog.setMax(steadyTime*1000);
-//                progressDialog.setMessage("Please be steady for 3 seconds");
-//                while (jumpTime < steadyTime*1000) {
-//                    try {
-//                        Thread.sleep(100);
-//                        jumpTime += 100;
-//                        progressDialog.setProgress(jumpTime);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//                progressDialog.dismiss();
+                progressDialog.setMax(steadyTime*1000);
+                progressDialog.setMessage("Please be steady for 3 seconds");
+                while (jumpTime < steadyTime*1000) {
+                    try {
+                        Thread.sleep(100);
+                        jumpTime += 100;
+                        progressDialog.setProgress(jumpTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                progressDialog.dismiss();
+                toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
                 //2. Hold for 3 seconds but don't lift it up
 //                jumpTime = 0;
 //                progressDialog.setMax(holdTime*1000);
@@ -495,6 +732,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 progressDialog.dismiss();
+                toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
                 //4. lift up in 3 seconds
                 jumpTime = 0;
                 progressDialog.setMax(holdupTime*1000);
@@ -516,6 +754,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 progressDialog.dismiss();
+                toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
                 //5. put down in 4 seconds
                 jumpTime = 0;
                 progressDialog.setMax(putdownTime*1000);
@@ -537,6 +776,29 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 progressDialog.dismiss();
+                toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP2, 1000);
+                //6. wait for 1 second
+                jumpTime = 0;
+                progressDialog.setMax(waitTime*1000);
+                progressDialog.setProgress(0);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressDialog.setMessage("Please wait for a second");
+                        progressDialog.show();
+                    }
+                });
+                while (jumpTime < waitTime*1000) {
+                    try {
+                        Thread.sleep(100);
+                        jumpTime += 100;
+                        progressDialog.setProgress(jumpTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                progressDialog.dismiss();
+                // stop
                 player.stop();
                 if (switch_IMUrecord.isChecked()) {
                     pw.flush(); //Added 02202019

@@ -34,3 +34,7 @@ to attach it to the weight.
 # Modified 07/17/2019
 1) The sound files are stored in a synced folder.
 2) Archive this version to make changes on test protocols.
+
+# Modified 09/01/2019
+1) Add an auto button to continuously run the measurements for certain times
+2) BUG HERE! The display can not show the instructions(Thread manipulation problem) 
